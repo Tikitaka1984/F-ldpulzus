@@ -1,0 +1,7 @@
+{
+  "name": "Earth Pulse Map – Education Edition",
+  "description": "Interaktív oktatási platform középiskolásoknak földrengések, tektonikus lemezek és vulkánok tanulmányozására.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
