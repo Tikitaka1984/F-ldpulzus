@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
-import * as topojson from 'topojson-client';
+import { feature } from 'topojson-client';
 import { Earthquake, Volcano, Plate } from '../types';
 
 interface EarthquakeMapProps {
@@ -141,7 +141,7 @@ const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     if (g.selectAll('.country').empty()) {
       d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then((data: any) => {
         // @ts-ignore
-        const countries = topojson.feature(data, data.objects.countries);
+        const countries = feature(data, data.objects.countries);
         
         g.selectAll('.country')
           .data((countries as any).features)
