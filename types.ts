@@ -36,6 +36,9 @@ export interface Volcano {
   coordinates: [number, number];
   type: string;
   elevation: number;
+  status: 'active' | 'dormant';
+  lastEruption?: string;
+  notableEruptions?: string[];
 }
 
 export enum TimeRange {

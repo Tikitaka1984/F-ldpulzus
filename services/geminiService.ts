@@ -106,8 +106,11 @@ Név: ${volcano.name}
 Ország: ${volcano.country}
 Típus: ${volcano.type}
 Magasság: ${volcano.elevation} m
+Statusz: ${volcano.status === 'active' ? 'Aktív' : 'Alvó/Inaktív'}
+Utolsó kitörés: ${volcano.lastEruption || 'Nincs adat'}
+Jelentős történelmi kitörések: ${volcano.notableEruptions?.join(', ') || 'Nincs adat'}
 Koordináták: [${volcano.coordinates[1]}, ${volcano.coordinates[0]}]
-A magyarázat térjen ki a vulkán kialakulására (pl. szubdukció vagy forrópont), és ha ismert, a legutóbbi jelentős aktivitására.`;
+A magyarázat térjen ki a vulkán kialakulására és történelmi hatására a környezetére.`;
 
   try {
     const response = await ai.models.generateContent({
