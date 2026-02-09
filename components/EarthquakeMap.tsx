@@ -28,7 +28,7 @@ interface EarthquakeMapProps {
 }
 
 const PLATE_NAMES_HU: Record<string, string> = {
-  "Pacific Plate": "Csendes-óáeáni-lemez",
+  "Pacific Plate": "Csendes-óceáni-lemez",
   "North American Plate": "Észak-amerikai-lemez",
   "Eurasian Plate": "Eurázsiai-lemez",
   "African Plate": "Afrikai-lemez",
@@ -178,19 +178,39 @@ const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       .scaleExtent([1, 12])
       .on('zoom', (event) => {
         gMain.attr('transform', event.transform);
-        gMain.selectAll('.plate-label').style('font-size', `${10 / event.transform.k}px`);
-        gMain.selectAll('.eq-dot').attr('stroke-width', 1 / event.transform.k);
-        gMain.selectAll('.volcano-symbol').attr('stroke-width', 1.5 / event.transform.k);
-        gMain.selectAll('.volcano-hitbox').attr('r', 15 / event.transform.k);
+        const k = event.transform.k;
+        gMain.selectAll('.plate-label').style('font-size', `${10 / k}px`);
+        gMain.selectAll('.eq-dot').attr('stroke-width', 1 / k);
+        gMain.selectAll('.volcano-symbol').attr('stroke-width', 1.5 / k);
+        gMain.selectAll('.volcano-hitbox').attr('r', 18 / k);
       });
 
     svgElement.call(zoomBehavior);
+
+    const refreshAllTransforms = () => {
+      gMain.selectAll('.eq-group')
+        .attr('transform', (d: any) => {
+          const coords = projection(d.coordinates as [number, number]);
+          return coords ? `translate(${coords[0]}, ${coords[1]})` : null;
+        });
+      gMain.selectAll('.volcano-group')
+        .attr('transform', (d: any) => {
+          const coords = projection(d.coordinates);
+          return coords ? `translate(${coords[0]}, ${coords[1]})` : null;
+        });
+      gMain.selectAll('.plate-label')
+        .attr('transform', (d: any) => {
+          const c = path.centroid(d);
+          return isNaN(c[0]) ? 'translate(0,0)' : `translate(${c[0]}, ${c[1]})`;
+        });
+    };
 
     const handleResize = () => {
       if (containerRef.current && svgRef.current) {
         const { width, height } = containerRef.current.getBoundingClientRect();
         projection.translate([width / 2, height / 2]);
         gMain.selectAll('path').attr('d', path as any);
+        refreshAllTransforms();
       }
     };
 
@@ -311,6 +331,8 @@ const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       (v.status === 'dormant' && showDormantVolcanoes)
     );
     
+    console.log('🌋 Rendering volcanoes:', { showActive: showActiveVolcanoes, showDormant: showDormantVolcanoes, count: visibleVolcanoes.length });
+
     const volcs = gLayer.selectAll<SVGGElement, Volcano>('.volcano-group')
       .data(visibleVolcanoes, (d: Volcano) => d.name);
     
@@ -321,21 +343,21 @@ const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
     const volcsEnter = volcs.enter()
       .append('g')
       .attr('class', 'volcano-group cursor-pointer')
-      .style('pointer-events', 'all'); // Ensure events bubble
+      .style('pointer-events', 'auto');
 
-    // ADD INVISIBLE HITBOX for better clickability
+    // ADD INVISIBLE HITBOX for better clickability - ensure it has fill to be clickable
     volcsEnter.append('circle')
       .attr('class', 'volcano-hitbox')
-      .attr('r', 15)
-      .attr('fill', 'transparent')
-      .style('pointer-events', 'all');
+      .attr('r', 18)
+      .attr('fill', 'rgba(255, 255, 255, 0)') // Fully transparent but present
+      .style('pointer-events', 'auto');
 
     // Add the visual symbol
     volcsEnter.append('path')
       .attr('class', 'volcano-symbol')
-      .attr('d', symbol().type(symbolTriangle).size(200) as any)
+      .attr('d', symbol().type(symbolTriangle).size(220) as any)
       .style('transform-origin', 'center')
-      .style('pointer-events', 'none'); // Symbol itself doesn't need to capture events
+      .style('pointer-events', 'none');
 
     // Merge and update all markers
     const volcsMerge = volcsEnter.merge(volcs);
@@ -346,9 +368,9 @@ const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
         return coords ? `translate(${coords[0]}, ${coords[1]})` : null;
       })
       .on('click', function(event, d: Volcano) {
-        event.stopPropagation(); // CRITICAL: Stop from clearing background
+        event.stopPropagation();
         event.preventDefault();
-        console.log('🌋 VULKÁN KATTINTVA:', d.name);
+        console.log('🌋 VULKÁN KATTINTVA:', d.name, d);
         onSelectVolcano(d);
       });
 
@@ -370,11 +392,13 @@ const EarthquakeMap: React.FC<EarthquakeMapProps> = ({
       hideTooltip();
     });
 
+    console.log('🌋 Volcano SVG markers updated:', gLayer.selectAll('.volcano-group').size());
+
   }, [showActiveVolcanoes, showDormantVolcanoes, volcanoes, projection, selectedVolcanoName, onSelectVolcano]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-slate-950">
-      <svg ref={svgRef} className="w-full h-full pointer-events-all block">
+      <svg ref={svgRef} className="w-full h-full pointer-events-auto block">
         <g ref={gRef}></g>
       </svg>
       <div ref={tooltipRef} className="fixed pointer-events-none bg-slate-900/95 border border-slate-700/50 p-3 rounded-xl shadow-2xl backdrop-blur-md opacity-0 transition-opacity duration-200 z-50 min-w-[150px]" style={{ transform: 'translate(-50%, -100%)' }}></div>
