@@ -1,6 +1,14 @@
 
 import React, { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
+/* Import specific D3 functions to fix property access errors */
+import { 
+  select, 
+  scaleLinear, 
+  axisBottom, 
+  axisLeft, 
+  area, 
+  line 
+} from 'd3';
 import { X, ArrowDown, ArrowRight, ArrowLeft, Zap } from 'lucide-react';
 import { Earthquake, Plate, Volcano } from '../types';
 
@@ -15,7 +23,8 @@ const CrossSectionView: React.FC<CrossSectionViewProps> = ({ item, onClose }) =>
   useEffect(() => {
     if (!canvasRef.current || !item) return;
 
-    const svg = d3.select(canvasRef.current);
+    /* Use imported select function */
+    const svg = select(canvasRef.current);
     svg.selectAll('*').remove();
 
     const width = 600;
@@ -28,13 +37,13 @@ const CrossSectionView: React.FC<CrossSectionViewProps> = ({ item, onClose }) =>
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Scales
-    const xScale = d3.scaleLinear().domain([0, 1000]).range([0, innerWidth]);
-    const yScale = d3.scaleLinear().domain([0, 700]).range([0, innerHeight]); // Depth scale
+    /* Use imported scaleLinear function */
+    const xScale = scaleLinear().domain([0, 1000]).range([0, innerWidth]);
+    const yScale = scaleLinear().domain([0, 700]).range([0, innerHeight]); // Depth scale
 
-    // Axes
-    const xAxis = d3.axisBottom(xScale).ticks(5).tickFormat(d => `${d} km`);
-    const yAxis = d3.axisLeft(yScale).ticks(7).tickFormat(d => `${d} km`);
+    /* Use imported axisBottom and axisLeft functions */
+    const xAxis = axisBottom(xScale).ticks(5).tickFormat(d => `${d} km`);
+    const yAxis = axisLeft(yScale).ticks(7).tickFormat(d => `${d} km`);
 
     g.append('g')
       .attr('transform', `translate(0,${innerHeight})`)
@@ -78,8 +87,8 @@ const CrossSectionView: React.FC<CrossSectionViewProps> = ({ item, onClose }) =>
     // For this demo, we visualize a "Subduction Zone" as the most educational one
     // In a real app, we'd check if (item as Plate).rawName or coordinate proximity to known boundaries
     
-    // Draw Oceanic Plate (Subducting)
-    const oceanicPlate = d3.area()
+    /* Use imported area function */
+    const oceanicPlate = area()
       .x((d: any) => xScale(d.x))
       .y0(0)
       .y1((d: any) => yScale(d.y));
@@ -105,9 +114,10 @@ const CrossSectionView: React.FC<CrossSectionViewProps> = ({ item, onClose }) =>
       { x: 550, y: 80 }
     ];
 
+    /* Use imported line function */
     g.append('path')
       .datum(continentalData)
-      .attr('d', d3.line().x((d: any) => xScale(d.x)).y((d: any) => yScale(d.y)) as any + 'Z')
+      .attr('d', line().x((d: any) => xScale(d.x)).y((d: any) => yScale(d.y)) as any + 'Z')
       .attr('fill', '#78350f')
       .attr('stroke', '#92400e')
       .attr('stroke-width', 2);
@@ -150,7 +160,7 @@ const CrossSectionView: React.FC<CrossSectionViewProps> = ({ item, onClose }) =>
     drawArrow(550, 250, 45);
 
     // If it's an earthquake, draw the focus (hypocenter)
-    if ((item as Earthquake).mag !== undefined) {
+    if (item && 'mag' in item && (item as Earthquake).mag !== undefined) {
       const eq = item as Earthquake;
       const depth = eq.coordinates[2];
       
